@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 import torch.nn as nn
 
-from apex import amp
+from sklearn import metrics
 from torch.nn import functional as F
 
-from wtfml.data_loaders.image import ClassificationLoader
+from wtfml.data_loaders.image import ClassificationDataLoader
 from wtfml.engine import Engine
 from wtfml.utils import EarlyStopping
 
@@ -24,16 +24,18 @@ class SEResNext50_32x4d(nn.Module):
         ](pretrained=pretrained)
         self.out = nn.Linear(2048, 1)
 
-    def forward(self, image):
+    def forward(self, image, targets):
         bs, _, _, _ = image.shape
         x = self.model.features(image)
         x = F.adaptive_avg_pool2d(x, 1)
-        x = x.reshape(bx, -1)
+        x = x.reshape(bs, -1)
         out = self.out(x)
-        return out
+        loss = nn.BCEWithLogitsLoss()(out, targets.reshape(-1, 1).type_as(out))
+        return out, loss
 
 def train(fold):
     training_data_path = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/jpeg/train224"
+    model_path = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification"
     df = pd.read_csv("E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/train_folds.csv")
     device = "cpu"
     epochs = 50
@@ -65,28 +67,28 @@ def train(fold):
     valid_images = [os.path.join(training_data_path, i + ".jpg") for i in valid_images]
     valid_targets = df_valid.target.values
 
-    train_dataset = ClassificationLoader(
+    train_dataset = ClassificationDataLoader(
         image_paths=train_images,
         targets=train_targets,
         resize=None,
         augmentations=train_aug
     )
 
-    train_loader = torch.utils.DataLoader(
+    train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=train_bs,
-        shuffle=True,
+        shuffle=False,
         num_workers=4
     )
 
-    valid_dataset = ClassificationLoader(
+    valid_dataset = ClassificationDataLoader(
         image_paths=valid_images,
         targets=valid_targets,
         resize=None,
         augmentations=valid_aug
     )
 
-    valid_loader = torch.utils.DataLoader(
+    valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
         batch_size=valid_bs,
         shuffle=False,
@@ -111,3 +113,20 @@ def train(fold):
             optimizer,
             device,fp16=True
         )
+        predictions, valid_loss = Engine.evaluate(
+            valid_loader,
+            model,
+            optimizer,
+            device=device
+        )
+        predictions = np.vstack((predictions)).ravel()
+        auc = metrics.roc_auc_score(valid_targets, predictions)
+        scheduler.step(auc)
+        print(f"epoch={epoch}, auc={auc}")
+        es(auc, model, model_path)
+        if es.early_stop:
+            print("early stopping")
+            break
+
+if __name__ == "__main__":
+    train(fold=0)

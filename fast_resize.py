@@ -24,7 +24,7 @@ def resize_image(image_path, output_folder, resize):
 
 # resize train images
 input_folder = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/jpeg/train"
-output_folder = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/jpeg/train224
+output_folder = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/jpeg/train224"
 images = glob.glob(os.path.join(input_folder, "*.jpg"))
 Parallel(n_jobs=12)(
     delayed(resize_image)(
