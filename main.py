@@ -35,10 +35,10 @@ class SEResNext50_32x4d(nn.Module):
 
 def train(fold):
     training_data_path = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/jpeg/train224"
-    model_path = "E:/documents/dev/skin cancer detection data/model.bin"
+    model_path = "C:/Users/sarab/OneDrive/Documents/dev/skin cancer detection app/model.bin"
     df = pd.read_csv("E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/train_folds.csv")
     device = "cuda"
-    epochs = 2
+    epochs = 50
     train_bs = 32
     valid_bs = 16
     mean = (0.485, 0.456, 0.406)
