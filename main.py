@@ -37,8 +37,8 @@ def train(fold):
     training_data_path = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/jpeg/train224"
     model_path = "E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification"
     df = pd.read_csv("E:/documents/dev/skin cancer detection data/siim-isic-melanoma-classification/train_folds.csv")
-    device = "cpu"
-    epochs = 50
+    device = "cuda"
+    epochs = 5
     train_bs = 32
     valid_bs = 16
     mean = (0.485, 0.456, 0.406)
@@ -117,8 +117,7 @@ def train(fold):
         predictions, valid_loss = Engine.evaluate(
             valid_loader,
             model,
-            optimizer,
-            device=device
+            device
         )
         predictions = np.vstack((predictions)).ravel()
         auc = metrics.roc_auc_score(valid_targets, predictions)
