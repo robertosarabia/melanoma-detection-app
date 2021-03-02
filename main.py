@@ -11,7 +11,7 @@ import torch.nn as nn
 from sklearn import metrics
 from torch.nn import functional as F
 
-from wtfml.data_loaders.image import ClassificationDataLoader
+from wtfml.data_loaders.image import ClassificationLoader
 from wtfml.engine import Engine
 from wtfml.utils import EarlyStopping
 
@@ -67,7 +67,7 @@ def train(fold):
     valid_images = [os.path.join(training_data_path, i + ".jpg") for i in valid_images]
     valid_targets = df_valid.target.values
 
-    train_dataset = ClassificationDataLoader(
+    train_dataset = ClassificationLoader(
         image_paths=train_images,
         targets=train_targets,
         resize=None,
@@ -81,7 +81,7 @@ def train(fold):
         num_workers=4
     )
 
-    valid_dataset = ClassificationDataLoader(
+    valid_dataset = ClassificationLoader(
         image_paths=valid_images,
         targets=valid_targets,
         resize=None,
@@ -99,7 +99,7 @@ def train(fold):
     model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-    scheduler - torch.optim.lr_scheduler.ReduceLROnPlateu(
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         patience=3,
         mode="max"
@@ -111,7 +111,8 @@ def train(fold):
             train_loader,
             model,
             optimizer,
-            device,fp16=True
+            device,
+            fp16=False
         )
         predictions, valid_loss = Engine.evaluate(
             valid_loader,
